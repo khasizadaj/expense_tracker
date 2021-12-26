@@ -1,5 +1,5 @@
 import json
-from typing import Dict
+from typing import Dict, List
 
 from expense_tracker.base import Category, Currency, Expense
 
@@ -12,19 +12,22 @@ class Database:
         print("Connecting to database...")
 
         with open(self.path) as database_file:
-            raw_expenses = json.load(database_file)
+            raw_expenses: List[Dict[str, str]] = json.load(database_file)
 
         expenses = {}
-        for expense_id, expense in raw_expenses.items():
-            expenses[expense_id] = Expense(
-                id=expense["id"],
+        curr_pk = 1
+        for expense in raw_expenses:
+            expenses[curr_pk] = Expense(
+                pk=curr_pk,
                 name=expense["name"],
                 date=expense["date"],
                 amount=expense["amount"],
                 description=expense["description"],
                 active=expense["active"],
-                category=Category(),
-                currency=Currency(id=expense["currency_id"]),
+                category=Category.get_or_create(expense["category"]),
+                currency=Currency(pk=expense["currency_id"]),
             )
+
+            curr_pk += 1
 
         return expenses
