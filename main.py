@@ -1,13 +1,28 @@
 import sys
-from typing import Dict, List
+from typing import Dict, List, Union
+import loguru
 
 import config
+from expense_tracker.base import Expense, ExpensesFactory
 from expense_tracker.database import Database
 from expense_tracker.read import ReadExpensesFactory
+from expense_tracker.create import CreateExpensesFactory
+
+ACTIONS = ["create", "read"]  # "update", "delete", "summary", "analytics", "budget"
 
 
-def action_factory(action_type: str, expenses: Dict):
-    return ReadExpensesFactory(expenses=expenses)
+def action_factory(action_type: str, expenses: Dict) -> ExpensesFactory:
+    """Returns respective expense factory to handle the given action type."""
+
+    if action_type not in ACTIONS:
+        raise NotImplementedError("This action is not implemented.")
+
+    if action_type == "create":
+        factory = CreateExpensesFactory(expenses=expenses)
+    elif action_type == "read":
+        factory = ReadExpensesFactory(expenses=expenses)
+
+    return factory
 
 
 def get_action_flags(arguments: List[str]) -> Dict[str, str]:
@@ -21,20 +36,30 @@ def get_action_flags(arguments: List[str]) -> Dict[str, str]:
     return action_flags
 
 
+def print_result(is_pretty: str, result: Union[Expense, Dict[str, Expense]]):
+    for result_object in result.values():
+        if is_pretty == "yes":
+            print(result_object.pk, result_object)
+        else:
+            print(result_object.pk, repr(result_object))
+
+
+@loguru.logger.catch()
 def main(args: List[str]) -> None:
     if len(args) > 1:
         action_args = get_action_flags(args[1:])
     else:
-        action_args = None
+        action_args = {}
 
     database = Database(path=config.DATABASE_PATH)
     expenses = database.connect()
 
     factory = action_factory(args[0], expenses=expenses)
     result = factory.execute(action_args)
-    print(result)
+
+    print_result(is_pretty=action_args.get("--pretty", None), result=result)
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    main(args[1:])
+    user_arguments = sys.argv
+    main(user_arguments[1:])
