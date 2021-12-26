@@ -1,30 +1,50 @@
+from typing import List
 from dataclasses import dataclass
+import uuid
 
 CURRENCIES = {"1": "FT", "2": "EUR", "3": "USD", "4": "AZN"}
 
 
-@dataclass
 class Currency:
-    id: str
-    name: str
+    def __init__(self, pk: str = "1"):
+        self.pk = pk
+        self.name = self.get_currency(pk)
 
-    def __init__(self, id: str = "1"):
-        self.id = id
-        self.name = self.get_currency(id)
+    def get_currency(self, pk: str):
+        return CURRENCIES[pk]
 
-    def get_currency(self, id: str):
-        return CURRENCIES[id]
+    def __repr__(self):
+        return f'Currency(pk="{self.pk}")'
+
+    def __str__(self):
+        return f'Currency is "{self.name}".)'
 
 
-@dataclass
 class Category:
-    id: int = 1
-    name: str = "General"
+    instances = {}
+
+    def __init__(self, name: str = "General"):
+        self.pk = uuid.uuid4().hex
+        self.name = name
+
+    @classmethod
+    def get_or_create(cls, name: str):
+        category = [obj for (_, obj) in cls.instances.items() if obj.name == name]
+
+        if len(category) > 1:
+            return category[0]
+
+        new_category = cls(name=name)
+        cls.instances[new_category.pk] = new_category
+        return new_category
+
+    def __repr__(self):
+        return f'Category(name="{self.name}")'`
 
 
 @dataclass
 class Expense:
-    id: str
+    pk: str
     date: str
     amount: float
     name: str
