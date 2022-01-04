@@ -1,5 +1,6 @@
 .vscode
 data.json
+*.code-workspace
 
 # extra files
 settings/
