@@ -2,6 +2,7 @@ import json
 from typing import Dict, List
 
 from expense_tracker.base import Category, Currency, Expense
+from expense_tracker.helper import shorten_pk
 
 
 class Database:
@@ -15,19 +16,24 @@ class Database:
             raw_expenses: List[Dict[str, str]] = json.load(database_file)
 
         expenses = {}
-        curr_pk = 1
         for expense in raw_expenses:
-            expenses[curr_pk] = Expense(
-                pk=curr_pk,
+            category = Category.get_or_create(name=expense["category"]["name"])
+            currency = Currency(pk=expense["currency"]["pk"])
+
+            short_pk = shorten_pk(expense["pk"])
+            expenses[short_pk] = Expense(
+                pk=expense["pk"],
                 name=expense["name"],
                 date=expense["date"],
                 amount=expense["amount"],
                 description=expense["description"],
                 active=expense["active"],
-                category=Category.get_or_create(expense["category"]),
-                currency=Currency(pk=expense["currency_id"]),
+                category=category,
+                currency=currency,
             )
 
-            curr_pk += 1
-
         return expenses
+
+    def save(self, expenses: List[Expense]) -> None:
+        with open(self.path, "w") as database_file:
+            json.dump(expenses, database_file, default=vars, indent=2)

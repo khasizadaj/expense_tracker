@@ -1,5 +1,6 @@
 from typing import Dict, Optional
 from expense_tracker.base import Expense, ExpensesFactory
+from expense_tracker.helper import shorten_pk
 
 
 class ReadExpensesFactory(ExpensesFactory):
@@ -18,12 +19,12 @@ class ReadExpensesFactory(ExpensesFactory):
         return self.expenses
 
     def get_single_expense(self, id_flag: str):
-        expense = self.expenses.get(int(id_flag))
-        return {expense.pk: expense}
+        expense = self.expenses.get(id_flag)
+        return {shorten_pk(expense.pk): expense}
 
     def get_filtered_expenses(self, category_flag: str):
         return {
-            expense_id: expense
-            for (expense_id, expense) in self.expenses.items()
+            shorten_pk(pk): expense
+            for (pk, expense) in self.expenses.items()
             if expense.category.name == category_flag
         }
